@@ -1,4 +1,3 @@
-# from os import open, listdir, stat
 from sys import exit
 from ftplib import FTP
 from smtplib import SMTP
@@ -9,8 +8,21 @@ from datetime import datetime
 from email.message import EmailMessage
 
 
+def no_backup(filetime: datetime):
+    with open('ftp_log.log', 'a') as wr:
+        output = ''.join([
+                '{} ERROR \t Something must be wrong, there are 0 new backups!\n'.format(datetime.now().strftime("%d/%m/%Y %H:%M:%S")), 
+                '{} ERROR \t Last backup on date {}\n'.format(datetime.now().strftime("%d/%m/%Y %H:%M:%S"), filetime),
+                '{} TRACE \t Email sent to <EMAIL WHO RECIEVE>\n'.format(datetime.now().strftime("%d/%m/%Y %H:%M:%S")),
+                '\n\n'
+            ])
+        error = 'CLIENT | ERROR TYPE'
+        send_email('EMAIL WHO SENDS', 'PASSWORD', create_email('EMAIL WHO SENDS', 'EMAIL WHO RECIEVE', error, output))
+        wr.write(output)
+        exit()
 
-def search_newest_file(path):
+
+def search_newest_file(path: str) -> str:
     filelist = []
 
     for file in listdir(path):
@@ -18,11 +30,16 @@ def search_newest_file(path):
         if filetime.date() == datetime.now().date():
             if file.endswith('.txt'):
                 filelist.append(path + file)
+
+    if len(filelist) == 0:
+        no_backup(filetime)
+
+    filename = max(filelist, key=lambda x: stat(x).st_size)
     
-    return [filelist, filetime]
+    return filename
 
 
-def create_email(mail_from, mail_to, mail_subject, mail_body):
+def create_email(mail_from: str, mail_to: str, mail_subject: str, mail_body: str) -> EmailMessage:
     msg = EmailMessage()
     msg.set_content(mail_body)
 
@@ -33,7 +50,7 @@ def create_email(mail_from, mail_to, mail_subject, mail_body):
     return msg
 
 
-def send_email(sender, password, msg):
+def send_email(sender: str, password: str, msg: str):
     send = SMTP(
         host='SMTP SERVER', 
         port=587, 
@@ -45,7 +62,7 @@ def send_email(sender, password, msg):
     send.quit()
 
 
-def open_ftp_connection(host, port, usr, pwd, up_dir, path, filename):
+def open_ftp_connection(host: str, port: int, usr: str, pwd: str, up_dir: str, filename: str) -> str:
     with FTP() as ftp:
         ftp.connect(
             host, 
@@ -64,11 +81,11 @@ def open_ftp_connection(host, port, usr, pwd, up_dir, path, filename):
         end = perf_counter()
 
         output = ''.join([
-            '{} INFO \t IP Address: {} \n'.format(datetime.now().strftime("%d/%m/%Y %H:%M:%S"), host),
-            '{} INFO \t User: {} \n'.format(datetime.now().strftime("%d/%m/%Y %H:%M:%S"), usr),
-            '{} INFO \t Directory: {} \n'.format(datetime.now().strftime("%d/%m/%Y %H:%M:%S"), up_dir),
-            '{} TRACE \t uploading file via FTP protocol ... \n'.format(datetime.now().strftime("%d/%m/%Y %H:%M:%S")),
-            '{} TRACE \t File Uploaded Successfully in {}! \n'.format(datetime.now().strftime("%d/%m/%Y %H:%M:%S"), str(end-start)),
+            '{} INFO \t IP Address: {}\n'.format(datetime.now().strftime("%d/%m/%Y %H:%M:%S"), host),
+            '{} INFO \t User: {}\n'.format(datetime.now().strftime("%d/%m/%Y %H:%M:%S"), usr),
+            '{} INFO \t Directory: {}\n'.format(datetime.now().strftime("%d/%m/%Y %H:%M:%S"), up_dir),
+            '{} TRACE \t uploading file via FTP protocol ...\n'.format(datetime.now().strftime("%d/%m/%Y %H:%M:%S")),
+            '{} TRACE \t File Uploaded Successfully in {}!\n'.format(datetime.now().strftime("%d/%m/%Y %H:%M:%S"), str(end-start)),
             '\n\n'
         ])
 
@@ -100,23 +117,8 @@ def main():
         path = 'PATH TO FILES'
         output = ''
 
-        filelist = search_newest_file(path)
+        filename = search_newest_file(path)
 
-        if len(filelist[0]) == 0:
-            output = ''.join([
-                '{} ERROR \t Something must be wrong, there are 0 new backups! \n'.format(datetime.now().strftime("%d/%m/%Y %H:%M:%S")), 
-                '{} ERROR \t Last backup on date {} \n'.format(datetime.now().strftime("%d/%m/%Y %H:%M:%S"), filelist[1]),
-                '{} TRACE \t Email sent to <EMAIL WHO RECIEVE> \n'.format(datetime.now().strftime("%d/%m/%Y %H:%M:%S")),
-                '\n\n'
-            ])
-            error = 'CLIENT | ERROR TYPE'
-            send_email('EMAIL WHO SENDS', 'PASSWORD', create_email('EMAIL WHO SENDS', 'EMAIL WHO RECIEVE', error, output))
-            wr.write(output)
-            exit()
-
-        filename = max(filelist[0], key=lambda x: stat(x).st_size)
-
-        # Start the FTP Process
         connection_status = open_ftp_connection(
             'DESTINATION IP ADDRESS',
             'PORT (as an int)',
@@ -127,13 +129,12 @@ def main():
         )
 
         output = "".join([
-            '{} INFO \t File: {} \n'.format(datetime.now().strftime("%d/%m/%Y %H:%M:%S"), filename),
-            '{} INFO \t File size (B): {} \n'.format(datetime.now().strftime("%d/%m/%Y %H:%M:%S"), stat(filename).st_size),
+            '{} INFO \t File: {}\n'.format(datetime.now().strftime("%d/%m/%Y %H:%M:%S"), filename),
+            '{} INFO \t File size (B): {}\n'.format(datetime.now().strftime("%d/%m/%Y %H:%M:%S"), stat(filename).st_size),
             connection_status
         ])
 
         wr.write(output)
-
 
 
 
