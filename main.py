@@ -100,16 +100,6 @@ def open_ftp_connection(host: str, port: int, usr: str, pwd: str, up_dir: str, f
     Pwd: passwordTest
     Source Folder:      D:/Source/Folder/
     Destination Folder: /Dest/Folder/
-
-
-    OUTPUT LOG EXAMPLE
-    18/01/2023 11:05:56 INFO 	 File: path\\file 
-    18/01/2023 11:05:56 INFO 	 File size (B): 121 
-    18/01/2023 11:05:56 INFO 	 IP Address: 192.168.10.50
-    18/01/2023 11:05:56 INFO 	 User: UserTest
-    18/01/2023 11:05:56 INFO 	 Directory: /Upload/Dir 
-    18/01/2023 11:05:56 TRACE 	 uploading file via FTP protocol ... 
-    18/01/2023 11:05:56 TRACE 	 File Uploaded Successfully in 0:00:00.016794! 
 """
 def main():
     # Get Newest and Largest File
